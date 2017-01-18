@@ -1,4 +1,4 @@
-package beandip;
+package bean_dip;
 
 import java.util.List;
 

@@ -1,12 +1,12 @@
-(ns beandip.core-test
+(ns bean-dip.core-test
   (:require [clojure.test :as test]
-            [beandip.core :as main])
-  (:import (beandip OuterBean InnerBean)))
+            [bean-dip.core :as main])
+  (:import (bean_dip OuterBean InnerBean)))
 
 (def map->OuterBean
   (main/set-translation! OuterBean
                          #{:foo-field
-                     :inners}))
+                           :inners}))
 
 (def map->InnerBean
   (main/set-translation! InnerBean
