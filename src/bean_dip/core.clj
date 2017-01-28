@@ -47,7 +47,8 @@
 
 (defprotocol TranslatableToMap
   (bean->map [this]
-    "Converts a Java bean to a map according to the key spec registered via extend-mappable (via deftranslation)"))
+    "Converts a Java bean to a map according to the key spec registered via extend-mappable
+    (usually via deftranslation)"))
 
 (defn name->getter [s]
   (str ".get" (hyphen->camel s)))
@@ -93,9 +94,9 @@
        (bean->map ~bean))))
 
 (defmacro deftranslation
-  "Extends bean->map to the given bean class and returns a function for translating maps into
-  instances of that bean class. Intended to be used to def a function by the name
-  map->MyBeanClass."
+  "Defines functions for bidirectional translation between instances of the given bean class and
+  maps. For translation from maps the function defined is named map->[MyBeanClass] (like defrecord
+  creates), and for translation to maps it's [MyBeanClass]->map."
   [bean-class field-specs]
   (let [map->bean (symbol (str "map->" bean-class))
         bean->map (symbol (str bean-class "->map"))]
