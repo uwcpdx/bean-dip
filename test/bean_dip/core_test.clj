@@ -1,39 +1,33 @@
 (ns bean-dip.core-test
   (:require [clojure.test :as test]
             [bean-dip.core :as main])
-  (:import (bean_dip OuterBean InnerBean)))
+  (:import (bean_dip ParentBean TestBean)))
 
-(def map->OuterBean
-  (main/set-translation! OuterBean
-                         #{:foo-field
-                           :inners}))
+(set! *warn-on-reflection* true)
 
-(def map->InnerBean
-  (main/set-translation! InnerBean
-                         #{[:bar :bar-alias]}))
+(main/deftranslation ParentBean #{:children})
+(main/deftranslation TestBean #{[:foo-field :foo]})
 
-(defmethod main/->for-bean :inners [_ value]
-  (mapv map->InnerBean value))
+(defmethod main/->bean-val :children [_ value]
+  (mapv map->TestBean value))
 
-(defmethod main/->for-map :bar-alias [_ value]
+(defmethod main/->map-val :foo [_ value]
   (str value))
 
-(defmethod main/->for-bean :bar-alias [_ value]
+(defmethod main/->bean-val :foo [_ value]
   (Long/parseLong value))
 
 (def map-repr
-  {:foo-field "hi"
-   :inners    [{:bar-alias "42"}]})
+  {:children [{:foo "42"}]})
 
 (def bean-repr
-  (doto (OuterBean.)
-    (.setFooField "hi")
-    (.setInners [(doto (InnerBean.)
-                   (.setBar 42))])))
+  (doto (ParentBean.)
+    (.setChildren [(doto (TestBean.)
+                     (.setFooField 42))])))
 
-(test/deftest ->map
-  (test/is (= map-repr (main/->map bean-repr))))
+(test/deftest bean->map
+  (test/is (= map-repr (ParentBean->map bean-repr))))
 
 (test/deftest map->bean
-  (test/is (= bean-repr (map->OuterBean map-repr))))
+  (test/is (= bean-repr (map->ParentBean map-repr))))
 

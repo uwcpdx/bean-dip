@@ -1,18 +1,19 @@
 (ns bean-dip.core
   (:require [clojure.string :as strs]))
 
-(defmulti ->for-bean
-          "Used to convert values from map entries for setting on corresponding bean fields. Methods
+(defmulti ->bean-val
+          "Used to translate values from map entries for setting on corresponding bean fields.
+          Methods are implemented per map key and have the arg signature [key value]. Defaults to
+          identity."
+          (fn [k _] k))
+
+(defmulti ->map-val
+          "Used to translate values from bean fields for using in corresponding map entries. Methods
           are implemented per map key and have the arg signature [key value]. Defaults to identity."
           (fn [k _] k))
 
-(defmulti ->for-map
-          "Used to convert values from bean fields for using in corresponding map entries. Methods
-          are implemented per map key and have the arg signature [key value]. Defaults to identity."
-          (fn [k _] k))
-
-(defmethod ->for-bean :default [_ value] value)
-(defmethod ->for-map :default [_ value] value)
+(defmethod ->bean-val :default [_ value] value)
+(defmethod ->map-val :default [_ value] value)
 
 (defn hyphen->camel ^String [s]
   (let [components (-> (name s) (strs/split #"-"))]
@@ -28,53 +29,54 @@
   (let [[field-key map-key] (if (vector? spec) spec [spec spec])
         value (list map-key value-map)]
     (list (symbol (name->setter field-key))
-          (list `->for-bean map-key value))))
+          (list `->bean-val map-key value))))
 
 (defn make-set-seq [value-map field-specs]
   (into []
         (map (partial make-set value-map))
         field-specs))
 
-(defmacro map->bean [bean-class field-specs]
+(defmacro def-map->bean [var-sym bean-class field-specs]
   (let [value-map   'value-map
         set-seq     (make-set-seq value-map field-specs)
         constructor (symbol (str bean-class "."))]
-    `(fn [~value-map]
-       (doto (~constructor)
-         ~@set-seq))))
+    `(def ~(with-meta var-sym {:tag bean-class})
+       (fn ~var-sym [~value-map]
+         (doto (~constructor)
+           ~@set-seq)))))
 
-(defprotocol ConvertableToMap
-  (->map [this]
-    "Converts a Java bean to a map according to the key spec registered via set-translation!"))
+(defprotocol TranslatableToMap
+  (bean->map [this]
+    "Converts a Java bean to a map according to the key spec registered via extend-mappable (via deftranslation)"))
 
 (defn name->getter [s]
   (str ".get" (hyphen->camel s)))
 
-(defn coerce-map-value [k v]
+(defn resolve-map-value [k v]
   (cond
     (nil? v)
     nil
 
-    (extends? ConvertableToMap (type v))
-    (->map v)
+    (extends? TranslatableToMap (type v))
+    (bean->map v)
 
     (instance? Iterable v)
-    (into [] (map ->map) v)
+    (into [] (map bean->map) v)
 
     :default
-    (->for-map k v)))
+    (->map-val k v)))
 
 (defn make-get [bean spec]
   (let [[field-key map-key] (if (vector? spec) spec [spec spec])
         get-value (list (symbol (name->getter field-key)) bean)]
-    [map-key `(coerce-map-value ~map-key ~get-value)]))
+    [map-key `(resolve-map-value ~map-key ~get-value)]))
 
 (defn make-map [bean field-specs]
   (into '(hash-map)
         (mapcat (partial make-get bean))
         field-specs))
 
-(defmacro bean->map [bean-class field-specs]
+(defmacro make-bean->map [bean-class field-specs]
   (let [bean         (with-meta 'bean {:tag bean-class})
         make-map-seq (reverse (make-map bean field-specs))]
     `(fn [~bean]
@@ -82,14 +84,23 @@
 
 (defmacro extend-mappable [bean-class field-specs]
   `(extend ~bean-class
-     ConvertableToMap
-     {:->map (bean->map ~bean-class ~field-specs)}))
+     TranslatableToMap
+     {:bean->map (make-bean->map ~bean-class ~field-specs)}))
 
-(defmacro set-translation!
-  "Extends ->map to the given bean class and returns a function for translating maps into instances
-  of that bean class. Intended to be used to def a function by the name map->MyBeanClass."
+(defmacro def-bean->map [var-sym]
+  (let [bean 'bean]
+    `(defn ~var-sym [~bean]
+       (bean->map ~bean))))
+
+(defmacro deftranslation
+  "Extends bean->map to the given bean class and returns a function for translating maps into
+  instances of that bean class. Intended to be used to def a function by the name
+  map->MyBeanClass."
   [bean-class field-specs]
-  `(do
-     (extend-mappable ~bean-class ~field-specs)
-     (map->bean ~bean-class ~field-specs)))
+  (let [map->bean (symbol (str "map->" bean-class))
+        bean->map (symbol (str bean-class "->map"))]
+    `(do
+       (extend-mappable ~bean-class ~field-specs)
+       [(def-bean->map ~bean->map)
+        (def-map->bean ~map->bean ~bean-class ~field-specs)])))
 
