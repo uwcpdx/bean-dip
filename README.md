@@ -49,7 +49,7 @@ Bean-dip is:
   * Bidirectional: Translate from beans to maps and back again
   * Declarative: Just specify the bean class and a set of keys for corresponding maps
   * Recursive: Translation descends into nested beans when they also have translations defined
-  * Reflection-free: Macro generates type hinted code that's name checked at compile time via `*warn-on-reflection*`
+  * Reflection-free: Macro generates type hinted code that can be name checked at compile time via `*warn-on-reflection*`
   * Extensible: Translate values by key via implementations of multimethods
 
 Namespaced keys are supported making it easy to enforce contracts with Java APIs using specs (more on this later).
@@ -74,7 +74,7 @@ Map key names are translated to a bean field names by converting hyphens to came
 
 #### Field Value Translation
 
-Field values can be translated -- for example to implement (de)serialization -- by implementing two multi methods:
+Field values can be translated -- for example to implement (de)serialization -- by implementing two multimethods:
 
 ```
 (defmethod bd/->bean-val :foo [_ v]
@@ -122,14 +122,14 @@ When translating from a Clojure map to a bean, implement `bean-dip.core/->bean-v
         "ParentBean{children=[#object[bean_dip.TestBean 0x13b9d4de \"TestBean{fooField=42}\"]]}"]
 ```
 
-When translating from a bean to a map, any Iterable or bean field value is descended into. Members and values whose type appears in a `bean-dip.core/deftranslation` evaluation will be translated as if by calling the corresponding *->map function on them (this is done via a protocol):
+When translating from a bean to a map, any Iterable or bean field value is descended into. Child beans whose type appears in a `bean-dip.core/deftranslation` evaluation will be translated as if by calling the corresponding *->map function on them (via a protocol):
 
 ```
 (ParentBean->map *1)
 => {:children [{:foo-field 42}]}
 ```
 
-Any members of an Iterable or field values that are beans that don't have `bean-dip.core/deftranslation` evaluations are translated by the `bean-dip.core/->map-val` multimethod (which defaults to identity).
+Any children that don't have `bean-dip.core/deftranslation` evaluations are translated by the `bean-dip.core/->map-val` multimethod (which defaults to identity).
 
 Note that `bean-dip.core/->bean-val` must be implemented for recursive translations from maps to beans, as no type inference is performed (or indeed is possible e.g. due to erasure in the Iterable case). The same doesn't go for `bean-dip.core/->map-val` and bean to map translation, as type checking allows automatic translation via protocol extension.
 
