@@ -6,7 +6,7 @@ Bidirectional translation between Clojure maps and Java beans that's declarative
 
 For your dependencies:
 
-`[uwcpdx/bean-dip "0.3.0"]`
+`[uwcpdx/bean-dip "0.5.0"]`
 
 Load core namespace and a trivial bean to demonstrate with in your REPL:
 
