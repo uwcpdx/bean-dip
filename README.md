@@ -25,7 +25,7 @@ Load core namespace and a trivial bean to demonstrate with in your REPL:
 ; }
 ```
 
-Specify the keys to translate to and from a Java bean's fields and get two functions defined:
+Give the keys to translate to and from Java bean fields, get two defns:
 
 ```
 (bd/deftranslation TestBean #{:foo-field})
