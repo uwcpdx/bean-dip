@@ -151,7 +151,7 @@
        [(def-bean->map ~bean->map)
         (def-map->setter-bean ~map->bean ~bean-class ~field-specs)])))
 
-(defmacro def-builder-translation [bean-class field-specs builder-form exclude-fields]
+(defmacro def-builder-translation [bean-class field-specs builder-form & exclude-fields]
   (let [map->bean (symbol (str "map->" bean-class))
         bean->map (symbol (str bean-class "->map"))]
     `(do
