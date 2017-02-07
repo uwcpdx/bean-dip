@@ -33,18 +33,32 @@
   (let [words (split-on-hyphens s)]
     (apply str (map uc-first words))))
 
-(defn make-field-call [map-sym get-method-name field-spec]
-  (let [[field-key map-key] (if (vector? field-spec)
-                              field-spec
-                              [field-spec field-spec])
-        value (list map-key map-sym)]
-    (list (symbol (get-method-name field-key))
-          (list `->bean-val map-key value))))
+(defn make-set-field-call [map-sym bean-sym get-method-name field-spec]
+  (let [[field-key map-key-or-type-hint type-hint] (if (vector? field-spec)
+                                                     field-spec
+                                                     [field-spec field-spec nil])
+        map-key     (if (keyword? map-key-or-type-hint)
+                      map-key-or-type-hint
+                      field-key)
+        type-hint   (if (not (keyword? map-key-or-type-hint))
+                      map-key-or-type-hint
+                      type-hint)
+        map-val-sym (if type-hint
+                      (with-meta 'map-val {:tag type-hint})
+                      'map-val)
+        get-map-val (list `->bean-val
+                          map-key
+                          (list map-key map-sym))]
+    (list `let [map-val-sym get-map-val]
+          (list (symbol (get-method-name field-key))
+                bean-sym
+                map-val-sym))))
 
-(defn make-set-seq [map-sym field-specs]
+(defn make-set-seq [map-sym bean-sym field-specs]
   (into []
-        (map (partial make-field-call
+        (map (partial make-set-field-call
                       map-sym
+                      bean-sym
                       #(str ".set" (hyphen->pascal %))))
         field-specs))
 
@@ -55,32 +69,36 @@
 
 (defmacro def-map->setter-bean [var-sym bean-class field-specs]
   (let [map-sym     'value-map
-        set-seq     (make-set-seq map-sym field-specs)
+        bean-sym    'bean
+        set-seq     (make-set-seq map-sym bean-sym field-specs)
         constructor (symbol (str bean-class "."))]
     `(def-map->bean
        ~var-sym
        ~map-sym
        ~bean-class
-       (doto (~constructor)
-         ~@set-seq))))
+       (let [~bean-sym (~constructor)]
+         ~@set-seq
+         ~bean-sym))))
 
-(defn make-build-seq [map-sym field-specs]
-  (-> (into []
-            (map (partial make-field-call
-                          map-sym
-                          #(str "." (hyphen->camel %))))
-            field-specs)
-      (conj (list (symbol ".build")))))
+(defn make-build-seq [map-sym bean-sym field-specs]
+  (into []
+        (map (partial make-set-field-call
+                      map-sym
+                      bean-sym
+                      #(str "." (hyphen->camel %))))
+        field-specs))
 
 (defmacro def-map->builder-bean [var-sym bean-class field-specs builder-form]
-  (let [map-sym   'value-map
-        build-seq (make-build-seq map-sym field-specs)]
+  (let [map-sym     'value-map
+        builder-sym 'builder
+        build-seq   (make-build-seq map-sym builder-sym field-specs)]
     `(def-map->bean
        ~var-sym
        ~map-sym
        ~bean-class
-       (-> ~builder-form
-           ~@build-seq))))
+       (let [~builder-sym ~builder-form]
+         ~@build-seq
+         (.build ~builder-sym)))))
 
 (defprotocol TranslatableToMap
   (bean->map [this]
@@ -95,7 +113,7 @@
     (nil? v)
     nil
 
-    (extends? TranslatableToMap (type v))
+    (extends? TranslatableToMap (class v))
     (bean->map v)
 
     (instance? Iterable v)
