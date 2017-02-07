@@ -10,7 +10,7 @@
                               #{[:foo-field :foo]
                                 :read-only-field}
                               (TestBean/builder)
-                              #{:read-only-field})
+                              :read-only-field)
 
 (defmethod main/->bean-val :children [_ value]
   (mapv map->TestBean value))
