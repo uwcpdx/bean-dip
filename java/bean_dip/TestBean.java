@@ -2,6 +2,14 @@ package bean_dip;
 
 public class TestBean {
     private Long fooField;
+    private String readOnlyField;
+
+    public TestBean() {
+    }
+
+    public TestBean(Long fooField) {
+        this.fooField = fooField;
+    }
 
     public Long getFooField() {
         return fooField;
@@ -9,6 +17,10 @@ public class TestBean {
 
     public void setFooField(Long fooField) {
         this.fooField = fooField;
+    }
+
+    public String getReadOnlyField() {
+        return "READ ONLY";
     }
 
     @Override
@@ -32,6 +44,23 @@ public class TestBean {
         return "TestBean{" +
             "fooField=" + fooField +
             '}';
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Long fooField;
+
+        public Builder fooField(Long foo) {
+            fooField = foo;
+            return this;
+        }
+
+        public TestBean build() {
+            return new TestBean(fooField);
+        }
     }
 }
 

@@ -5,8 +5,12 @@
 
 (set! *warn-on-reflection* true)
 
-(main/deftranslation ParentBean #{:children})
-(main/deftranslation TestBean #{[:foo-field :foo]})
+(main/def-translation ParentBean #{:children})
+(main/def-builder-translation TestBean
+                              #{[:foo-field :foo]
+                                :read-only-field}
+                              (TestBean/builder)
+                              #{:read-only-field})
 
 (defmethod main/->bean-val :children [_ value]
   (mapv map->TestBean value))
@@ -18,7 +22,8 @@
   (Long/parseLong value))
 
 (def map-repr
-  {:children [{:foo "42"}]})
+  {:children [{:foo             "42"
+               :read-only-field "READ ONLY"}]})
 
 (def bean-repr
   (doto (ParentBean.)
