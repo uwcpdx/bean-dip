@@ -1,13 +1,18 @@
 (ns bean-dip.core-test
   (:require [clojure.test :as test]
             [bean-dip.core :as main])
-  (:import (bean_dip ParentBean TestBean)))
+  (:import (bean_dip ParentBean TestBean TestBean$Builder)))
 
 (set! *warn-on-reflection* true)
 
 (main/def-translation ParentBean #{:children})
+
+(defmethod main/builder-override [TestBean :bar-field] [_ ^TestBean$Builder builder bar]
+  (.barFieldUnconventional builder bar))
+
 (main/def-builder-translation TestBean
                               #{[:foo-field :foo]
+                                :bar-field
                                 :read-only-field}
                               (TestBean/builder)
                               :read-only-field)
@@ -23,12 +28,12 @@
 
 (def map-repr
   {:children [{:foo             "42"
+               :bar-field       "hello"
                :read-only-field "READ ONLY"}]})
 
 (def bean-repr
   (doto (ParentBean.)
-    (.setChildren [(doto (TestBean.)
-                     (.setFooField 42))])))
+    (.setChildren [(TestBean. 42 "hello")])))
 
 (test/deftest bean->map
   (test/is (= map-repr (ParentBean->map bean-repr))))
