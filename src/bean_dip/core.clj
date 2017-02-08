@@ -13,7 +13,6 @@
           (fn [k _] k))
 
 (defmethod ->bean-val :default [_ value] value)
-(defmethod ->map-val :default [_ value] value)
 
 (defn uc-first [s]
   (apply str
@@ -88,9 +87,15 @@
                       #(str "." (hyphen->camel %))))
         field-specs))
 
+(defprotocol FinalizingBuilder
+  (finalize [this value-map]
+    "Converts a Java bean to a map according to the key spec registered via extend-mappable
+    (usually via deftranslation)"))
+
 (defmacro def-map->builder-bean [var-sym bean-class field-specs builder-form]
   (let [map-sym     'value-map
         builder-sym 'builder
+        build-sym   '.build
         build-seq   (make-build-seq map-sym builder-sym field-specs)]
     `(def-map->bean
        ~var-sym
@@ -98,7 +103,9 @@
        ~bean-class
        (let [~builder-sym ~builder-form]
          ~@build-seq
-         (.build ~builder-sym)))))
+         (when (extends? FinalizingBuilder (class ~builder-sym))
+           (finalize ~builder-sym ~map-sym))
+         (~build-sym ~builder-sym)))))
 
 (defprotocol TranslatableToMap
   (bean->map [this]
@@ -110,17 +117,17 @@
 
 (defn resolve-map-value [k v]
   (cond
-    (nil? v)
-    nil
+    (instance? Iterable v)
+    (into [] (map bean->map) v)
+
+    (get-method ->map-val k)
+    (->map-val k v)
 
     (extends? TranslatableToMap (class v))
     (bean->map v)
 
-    (instance? Iterable v)
-    (into [] (map bean->map) v)
-
     :default
-    (->map-val k v)))
+    v))
 
 (defn make-get [bean spec]
   (let [[field-key map-key] (if (vector? spec) spec [spec spec])
