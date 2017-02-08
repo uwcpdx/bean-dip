@@ -40,10 +40,11 @@
         get-map-val (list `->bean-val
                           map-key
                           (list map-key map-sym))]
-    (list `let [map-val-sym get-map-val]
-          (list (symbol (get-method-name field-key))
+    `(if (contains? ~map-sym ~map-key)
+       (let ~[map-val-sym get-map-val]
+         ~(list (symbol (get-method-name field-key))
                 bean-sym
-                map-val-sym))))
+                map-val-sym)))))
 
 (defn make-set-seq [map-sym bean-sym field-specs]
   (into []
@@ -76,7 +77,10 @@
                  `(builder-override [~bean-class-sym ~map-key]
                                     ~builder-sym
                                     (~map-key ~map-sym))
-                 (make-set-field-call map-sym builder-sym #(str "." (hyphen->camel %)) spec))))
+                 (make-set-field-call map-sym
+                                      builder-sym
+                                      #(str "." (hyphen->camel %))
+                                      spec))))
         field-specs))
 
 (defmacro def-map->builder-bean [var-sym bean-class-sym field-specs builder-form]
@@ -91,7 +95,7 @@
          ([~map-sym]
            (~var-sym ~map-sym false))
          ([~map-sym ~return-builder?]
-           (let [~builder-sym ~builder-form]
+           (let ~[builder-sym builder-form]
              ~@build-seq
              (if ~return-builder?
                ~builder-sym
@@ -102,8 +106,11 @@
     "Converts a Java bean to a map according to the key spec registered via extend-mappable
     (usually via deftranslation)"))
 
-(defn name->getter [s]
-  (str ".get" (hyphen->pascal s)))
+(defn name->getter [field-key map-key]
+  (str (if (strs/ends-with? (name map-key) "?")
+         ".is"
+         ".get")
+       (hyphen->pascal field-key)))
 
 (defn resolve-map-value [k v]
   (cond
@@ -121,7 +128,7 @@
 
 (defn make-get [bean spec]
   (let [[field-key map-key] (if (vector? spec) spec [spec spec])
-        get-value (list (symbol (name->getter field-key)) bean)]
+        get-value (list (symbol (name->getter field-key map-key)) bean)]
     [map-key `(resolve-map-value ~map-key ~get-value)]))
 
 (defn make-map [bean field-specs]
