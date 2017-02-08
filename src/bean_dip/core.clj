@@ -61,23 +61,16 @@
                       #(str ".set" (hyphen->pascal %))))
         field-specs))
 
-(defmacro def-map->bean [var-sym map-sym bean-class body]
-  `(def ~(with-meta var-sym {:tag bean-class})
-     (fn ~var-sym [~map-sym]
-       ~body)))
-
 (defmacro def-map->setter-bean [var-sym bean-class field-specs]
   (let [map-sym     'value-map
         bean-sym    'bean
         set-seq     (make-set-seq map-sym bean-sym field-specs)
         constructor (symbol (str bean-class "."))]
-    `(def-map->bean
-       ~var-sym
-       ~map-sym
-       ~bean-class
-       (let [~bean-sym (~constructor)]
-         ~@set-seq
-         ~bean-sym))))
+    `(def ~(with-meta var-sym {:tag bean-class})
+       (fn ~var-sym [~map-sym]
+         (let [~bean-sym (~constructor)]
+           ~@set-seq
+           ~bean-sym)))))
 
 (defn make-build-seq [map-sym bean-sym field-specs]
   (into []
@@ -89,23 +82,27 @@
 
 (defprotocol FinalizingBuilder
   (finalize [this value-map]
-    "Converts a Java bean to a map according to the key spec registered via extend-mappable
-    (usually via deftranslation)"))
+    "Manipulates a bean builder right before .build is called on it or it's returned. Useful when
+    builders have usage not covered by the single-arity-method-per-field-name convention."))
 
 (defmacro def-map->builder-bean [var-sym bean-class field-specs builder-form]
-  (let [map-sym     'value-map
-        builder-sym 'builder
-        build-sym   '.build
-        build-seq   (make-build-seq map-sym builder-sym field-specs)]
-    `(def-map->bean
-       ~var-sym
-       ~map-sym
-       ~bean-class
-       (let [~builder-sym ~builder-form]
-         ~@build-seq
-         (when (extends? FinalizingBuilder (class ~builder-sym))
-           (finalize ~builder-sym ~map-sym))
-         (~build-sym ~builder-sym)))))
+  (let [map-sym         'value-map
+        builder-sym     'builder
+        build-sym       '.build
+        return-builder? 'return-builder?
+        build-seq       (make-build-seq map-sym builder-sym field-specs)]
+    `(def ~(with-meta var-sym {:tag bean-class})
+       (fn ~var-sym
+         ([~map-sym]
+           (~var-sym ~map-sym false))
+         ([~map-sym ~return-builder?]
+           (let [~builder-sym ~builder-form]
+             ~@build-seq
+             (when (extends? FinalizingBuilder (class ~builder-sym))
+               (finalize ~builder-sym ~map-sym))
+             (if ~return-builder?
+               ~builder-sym
+               (~build-sym ~builder-sym))))))))
 
 (defprotocol TranslatableToMap
   (bean->map [this]
