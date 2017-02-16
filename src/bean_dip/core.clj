@@ -20,7 +20,7 @@
          (rest s)))
 
 (defn split-on-hyphens [s]
-  (-> (name s) (strs/split #"-")))
+  (strs/split s #"-"))
 
 (defn hyphen->camel ^String [s]
   (let [words (split-on-hyphens s)]
@@ -62,7 +62,9 @@
         (map (partial make-set-field-call
                       map-sym
                       bean-sym
-                      #(str ".set" (-> % maybe-deqmark hyphen->pascal))))
+                      #(str ".set" (-> (name %)
+                                       maybe-deqmark
+                                       hyphen->pascal))))
         field-specs))
 
 (defmacro def-map->setter-bean [var-sym bean-class-sym field-specs]
@@ -90,7 +92,9 @@
                                     (~map-key ~map-sym))
                  (make-set-field-call map-sym
                                       builder-sym
-                                      #(str "." (-> % maybe-deqmark hyphen->camel))
+                                      #(str "." (-> (name %)
+                                                    maybe-deqmark
+                                                    hyphen->camel))
                                       spec))))
         field-specs))
 
@@ -120,8 +124,8 @@
 (defn name->getter [field-key map-key]
   (let [map-key-name (name map-key)]
     (if (qmarked? map-key-name)
-      (str ".is" (hyphen->pascal (deqmark map-key-name)))
-      (str ".get" (hyphen->pascal field-key)))))
+      (str ".is" (-> map-key-name deqmark hyphen->pascal))
+      (str ".get" (-> field-key name hyphen->pascal)))))
 
 (defn resolve-map-value [k v]
   (cond
