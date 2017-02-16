@@ -32,6 +32,17 @@
   (let [words (split-on-hyphens s)]
     (apply str (map uc-first words))))
 
+(defn qmarked? [s]
+  (strs/ends-with? s "?"))
+
+(defn deqmark [s]
+  (subs s 0 (- (count s) 1)))
+
+(defn maybe-deqmark [s]
+  (if (qmarked? s)
+    (deqmark s)
+    s))
+
 (defn make-set-field-call [map-sym bean-sym get-method-name field-spec]
   (let [[field-key map-key type-hint] field-spec
         map-val-sym (if type-hint
@@ -51,7 +62,7 @@
         (map (partial make-set-field-call
                       map-sym
                       bean-sym
-                      #(str ".set" (hyphen->pascal %))))
+                      #(str ".set" (-> % maybe-deqmark hyphen->pascal))))
         field-specs))
 
 (defmacro def-map->setter-bean [var-sym bean-class-sym field-specs]
@@ -79,7 +90,7 @@
                                     (~map-key ~map-sym))
                  (make-set-field-call map-sym
                                       builder-sym
-                                      #(str "." (hyphen->camel %))
+                                      #(str "." (-> % maybe-deqmark hyphen->camel))
                                       spec))))
         field-specs))
 
@@ -108,11 +119,8 @@
 
 (defn name->getter [field-key map-key]
   (let [map-key-name (name map-key)]
-    (if (strs/ends-with? map-key-name "?")
-      (str ".is" (hyphen->pascal (subs map-key-name
-                                       0
-                                       (- (count map-key-name)
-                                          1))))
+    (if (qmarked? map-key-name)
+      (str ".is" (hyphen->pascal (deqmark map-key-name)))
       (str ".get" (hyphen->pascal field-key)))))
 
 (defn resolve-map-value [k v]
