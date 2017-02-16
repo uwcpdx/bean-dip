@@ -107,18 +107,21 @@
     (usually via deftranslation)"))
 
 (defn name->getter [field-key map-key]
-  (str (if (strs/ends-with? (name map-key) "?")
-         ".is"
-         ".get")
-       (hyphen->pascal field-key)))
+  (let [map-key-name (name map-key)]
+    (if (strs/ends-with? map-key-name "?")
+      (str ".is" (hyphen->pascal (subs map-key-name
+                                       0
+                                       (- (count map-key-name)
+                                          1))))
+      (str ".get" (hyphen->pascal field-key)))))
 
 (defn resolve-map-value [k v]
   (cond
-    (instance? Iterable v)
-    (into [] (map bean->map) v)
-
     (get-method ->map-val k)
     (->map-val k v)
+
+    (instance? Iterable v)
+    (into [] (map bean->map) v)
 
     (extends? TranslatableToMap (class v))
     (bean->map v)
