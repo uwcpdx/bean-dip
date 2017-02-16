@@ -41,3 +41,6 @@
 (test/deftest map->bean
   (test/is (= bean-repr (map->ParentBean map-repr))))
 
+; TODO tests for qmark key handling
+
+
