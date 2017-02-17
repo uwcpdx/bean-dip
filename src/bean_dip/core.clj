@@ -121,11 +121,12 @@
     "Converts a Java bean to a map according to the key spec registered via extend-mappable
     (usually via deftranslation)"))
 
-(defn name->getter [field-key map-key]
-  (let [map-key-name (name map-key)]
-    (if (qmarked? map-key-name)
-      (str ".is" (-> map-key-name deqmark hyphen->pascal))
-      (str ".get" (-> field-key name hyphen->pascal)))))
+(defn name->getter-sym [field-key map-key]
+  (-> (let [map-key-name (name map-key)]
+        (if (qmarked? map-key-name)
+          (str ".is" (-> map-key-name deqmark hyphen->pascal))
+          (str ".get" (-> field-key name hyphen->pascal))))
+      symbol))
 
 (defn resolve-map-value [k v]
   (cond
@@ -141,15 +142,17 @@
     :default
     v))
 
-(defn make-get [bean spec]
-  (let [[field-key map-key] (if (vector? spec) spec [spec spec])
-        get-value (list (symbol (name->getter field-key map-key)) bean)]
-    [map-key `(resolve-map-value ~map-key ~get-value)]))
+(defn make-maybe-assoc! [transient-sym bean-sym spec]
+  (let [[field-key map-key] spec]
+    `(when-let [value-sym# (~(name->getter-sym field-key map-key) ~bean-sym)]
+       (assoc! ~transient-sym ~map-key (resolve-map-value ~map-key value-sym#)))))
 
-(defn make-map [bean field-specs]
-  (into '(hash-map)
-        (mapcat (partial make-get bean))
-        field-specs))
+(defn make-map [bean-sym field-specs]
+  (let [transient-sym 'transient]
+    (-> (into `([~transient-sym (transient {})] let)
+              (map (partial make-maybe-assoc! transient-sym bean-sym))
+              field-specs)
+        (conj `(persistent! ~transient-sym)))))
 
 (defmacro make-bean->map [bean-class field-specs]
   (let [bean         (with-meta 'bean {:tag bean-class})

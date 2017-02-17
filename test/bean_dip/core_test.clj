@@ -13,6 +13,7 @@
 (main/def-builder-translation TestBean
                               #{[:foo-field :foo]
                                 :bar-field
+                                :some-condition?
                                 :read-only-field}
                               (TestBean/builder)
                               :read-only-field)
@@ -29,11 +30,12 @@
 (def map-repr
   {:children [{:foo             "42"
                :bar-field       "hello"
+               :some-condition? true
                :read-only-field "READ ONLY"}]})
 
 (def bean-repr
   (doto (ParentBean.)
-    (.setChildren [(TestBean. 42 "hello")])))
+    (.setChildren [(TestBean. 42 "hello" true)])))
 
 (test/deftest bean->map
   (test/is (= map-repr (ParentBean->map bean-repr))))
@@ -41,6 +43,7 @@
 (test/deftest map->bean
   (test/is (= bean-repr (map->ParentBean map-repr))))
 
-; TODO tests for qmark key handling
-
+(test/deftest omit-keys-with-null-values
+  (test/is (= {}
+              (ParentBean->map (ParentBean.)))))
 

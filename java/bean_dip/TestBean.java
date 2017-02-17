@@ -3,11 +3,13 @@ package bean_dip;
 public class TestBean {
     private Long fooField;
     private String barField;
+    private Boolean someCondition;
     private final String readOnlyField = "READ ONLY";
 
-    public TestBean(Long fooField, String barField) {
+    public TestBean(Long fooField, String barField, Boolean someCondition) {
         this.fooField = fooField;
         this.barField = barField;
+        this.someCondition = someCondition;
     }
 
     public Long getFooField() {
@@ -22,6 +24,10 @@ public class TestBean {
         return readOnlyField;
     }
 
+    public Boolean isSomeCondition() {
+        return someCondition;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -33,6 +39,8 @@ public class TestBean {
             return false;
         if (barField != null ? !barField.equals(testBean.barField) : testBean.barField != null)
             return false;
+        if (someCondition != null ? !someCondition.equals(testBean.someCondition) : testBean.someCondition != null)
+            return false;
         return readOnlyField != null ? readOnlyField.equals(testBean.readOnlyField) : testBean.readOnlyField == null;
 
     }
@@ -41,6 +49,7 @@ public class TestBean {
     public int hashCode() {
         int result = fooField != null ? fooField.hashCode() : 0;
         result = 31 * result + (barField != null ? barField.hashCode() : 0);
+        result = 31 * result + (someCondition != null ? someCondition.hashCode() : 0);
         result = 31 * result + (readOnlyField != null ? readOnlyField.hashCode() : 0);
         return result;
     }
@@ -49,7 +58,8 @@ public class TestBean {
     public String toString() {
         return "TestBean{" +
             "fooField=" + fooField +
-            ", barFieldUnconventional='" + barField + '\'' +
+            ", barField='" + barField + '\'' +
+            ", someCondition=" + someCondition +
             ", readOnlyField='" + readOnlyField + '\'' +
             '}';
     }
@@ -61,9 +71,15 @@ public class TestBean {
     public static final class Builder {
         private Long fooField;
         private String barField;
+        private Boolean someCondition;
 
         public Builder fooField(Long foo) {
             fooField = foo;
+            return this;
+        }
+
+        public Builder someCondition(Boolean condition) {
+            someCondition = condition;
             return this;
         }
 
@@ -73,7 +89,7 @@ public class TestBean {
         }
 
         public TestBean build() {
-            return new TestBean(fooField, barField);
+            return new TestBean(fooField, barField, someCondition);
         }
     }
 }
