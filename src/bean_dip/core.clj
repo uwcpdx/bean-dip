@@ -98,23 +98,24 @@
                                       spec))))
         field-specs))
 
-(defmacro def-map->builder-bean [var-sym bean-class-sym field-specs builder-form]
+(defmacro def-map->bean-builder [var-sym bean-class-sym builder-class-sym builder-form field-specs]
+  (let [map-sym     'value-map
+        builder-sym 'builder
+        bean-class  (resolve bean-class-sym)
+        build-seq   (make-build-seq map-sym builder-sym bean-class-sym bean-class field-specs)]
+    `(def ~(with-meta var-sym {:tag builder-class-sym})
+       (fn ~var-sym [~map-sym]
+         (let ~[builder-sym builder-form]
+           ~@build-seq
+           ~builder-sym)))))
+
+(defmacro def-map->bean-via-builder [map->bean map->builder bean-class-sym]
   (let [map-sym         'value-map
-        builder-sym     'builder
-        build-sym       '.build
-        return-builder? 'return-builder?
-        bean-class      (resolve bean-class-sym)
-        build-seq       (make-build-seq map-sym builder-sym bean-class-sym bean-class field-specs)]
-    `(def ~(with-meta var-sym {:tag bean-class-sym})
-       (fn ~var-sym
-         ([~map-sym]
-           (~var-sym ~map-sym false))
-         ([~map-sym ~return-builder?]
-           (let ~[builder-sym builder-form]
-             ~@build-seq
-             (if ~return-builder?
-               ~builder-sym
-               (~build-sym ~builder-sym))))))))
+        map->build-call (list '.build
+                              (list map->builder map-sym))]
+    `(def ~(with-meta map->bean {:tag bean-class-sym})
+       (fn ~map->bean [~map-sym]
+         ~map->build-call))))
 
 (defprotocol TranslatableToMap
   (bean->map [this]
@@ -195,31 +196,36 @@
                  [field-key map-key type-hint])))
         field-specs))
 
-(defn symbols-and-specs [bean-class field-specs]
-  (let [map->bean   (symbol (str "map->" bean-class))
-        bean->map   (symbol (str bean-class "->map"))
-        field-specs (desugar-field-specs field-specs)]
-    [map->bean bean->map field-specs]))
-
 (defmacro def-translation
   "Defines functions for bidirectional translation between instances of the given bean class and
   maps. For translation from maps the function defined is named map->[MyBeanClass] (like defrecord
   creates), and for translation to maps it's [MyBeanClass]->map."
   [bean-class-sym field-specs]
-  (let [[map->bean bean->map field-specs] (symbols-and-specs bean-class-sym field-specs)]
+  (let [map->bean   (symbol (str "map->" bean-class-sym))
+        bean->map   (symbol (str bean-class-sym "->map"))
+        field-specs (desugar-field-specs field-specs)]
     `(do
        (extend-mappable ~bean-class-sym ~field-specs)
        [(def-bean->map ~bean->map)
         (def-map->setter-bean ~map->bean ~bean-class-sym ~field-specs)])))
 
-(defmacro def-builder-translation [bean-class-sym field-specs builder-form & exclude-fields]
-  (let [[map->bean bean->map field-specs] (symbols-and-specs bean-class-sym field-specs)
-        ]
+(defmacro def-builder-translation [bean-class-sym builder-class-sym field-specs & [{:keys [builder-form
+                                                                                           exclude-fields]}]]
+  (let [map->builder (symbol (str "map->" builder-class-sym))
+        map->bean    (symbol (str "map->" bean-class-sym))
+        bean->map    (symbol (str bean-class-sym "->map"))
+        field-specs  (desugar-field-specs field-specs)
+        builder-form (or builder-form
+                         (list (symbol (str builder-class-sym) ".")))]
     `(do
        (extend-mappable ~bean-class-sym ~field-specs)
        [(def-bean->map ~bean->map)
-        (def-map->builder-bean ~map->bean
+        (def-map->bean-builder ~map->builder
                                ~bean-class-sym
-                               ~(filter-specs field-specs exclude-fields)
-                               ~builder-form)])))
+                               ~builder-class-sym
+                               ~builder-form
+                               ~(filter-specs field-specs exclude-fields))
+        (def-map->bean-via-builder ~map->bean
+                                   ~map->builder
+                                   ~bean-class-sym)])))
 

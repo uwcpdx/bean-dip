@@ -11,12 +11,13 @@
   (.barFieldUnconventional builder bar))
 
 (main/def-builder-translation TestBean
+                              TestBean$Builder
                               #{[:foo-field :foo]
                                 :bar-field
                                 :some-condition?
                                 :read-only-field}
-                              (TestBean/builder)
-                              :read-only-field)
+                              {:builder-form   (TestBean/builder)
+                               :exclude-fields #{:read-only-field}})
 
 (defmethod main/->bean-val :children [_ value]
   (mapv map->TestBean value))
@@ -27,15 +28,20 @@
 (defmethod main/->bean-val :foo [_ value]
   (Long/parseLong value))
 
+(def test-map
+  {:foo             "42"
+   :bar-field       "hello"
+   :some-condition? true
+   :read-only-field "READ ONLY"})
+
 (def map-repr
-  {:children [{:foo             "42"
-               :bar-field       "hello"
-               :some-condition? true
-               :read-only-field "READ ONLY"}]})
+  {:children [test-map]})
+
+(def test-bean (TestBean. 42 "hello" true))
 
 (def bean-repr
   (doto (ParentBean.)
-    (.setChildren [(TestBean. 42 "hello" true)])))
+    (.setChildren [test-bean])))
 
 (test/deftest bean->map
   (test/is (= map-repr (ParentBean->map bean-repr))))
@@ -46,4 +52,7 @@
 (test/deftest omit-keys-with-null-values
   (test/is (= {}
               (ParentBean->map (ParentBean.)))))
+
+(test/deftest map->builder
+  (test/is (= test-bean (.build (map->TestBean$Builder test-map)))))
 
