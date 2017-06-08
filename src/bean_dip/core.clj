@@ -98,12 +98,12 @@
                                       spec))))
         field-specs))
 
-(defmacro def-map->bean-builder [var-sym bean-class-sym builder-class-sym builder-form field-specs]
+(defmacro def-map->bean-builder [var-sym bean-class-sym builder-form field-specs]
   (let [map-sym     'value-map
         builder-sym 'builder
         bean-class  (resolve bean-class-sym)
         build-seq   (make-build-seq map-sym builder-sym bean-class-sym bean-class field-specs)]
-    `(def ~(with-meta var-sym {:tag builder-class-sym})
+    `(def ~var-sym
        (fn ~var-sym [~map-sym]
          (let ~[builder-sym builder-form]
            ~@build-seq
@@ -211,18 +211,18 @@
 
 (defmacro def-builder-translation [bean-class-sym builder-class-sym field-specs & [{:keys [builder-form
                                                                                            exclude-fields]}]]
-  (let [map->builder (symbol (str "map->" builder-class-sym))
+  (let [map->builder (with-meta (symbol (str "map->" builder-class-sym))
+                                {:tag builder-class-sym})
         map->bean    (symbol (str "map->" bean-class-sym))
         bean->map    (symbol (str bean-class-sym "->map"))
         field-specs  (desugar-field-specs field-specs)
         builder-form (or builder-form
-                         (list (symbol (str builder-class-sym) ".")))]
+                         (list (symbol (str builder-class-sym "."))))]
     `(do
        (extend-mappable ~bean-class-sym ~field-specs)
        [(def-bean->map ~bean->map)
         (def-map->bean-builder ~map->builder
                                ~bean-class-sym
-                               ~builder-class-sym
                                ~builder-form
                                ~(filter-specs field-specs exclude-fields))
         (def-map->bean-via-builder ~map->bean
