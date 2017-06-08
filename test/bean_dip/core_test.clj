@@ -16,8 +16,8 @@
                                 :bar-field
                                 :some-condition?
                                 :read-only-field}
-                              {:builder-form   (TestBean/builder)
-                               :exclude-fields #{:read-only-field}})
+                              {:builder-form    (TestBean/builder)
+                               :get-only-fields #{:read-only-field}})
 
 (defmethod main/->bean-val :children [_ value]
   (mapv map->TestBean value))

@@ -109,13 +109,12 @@
            ~@build-seq
            ~builder-sym)))))
 
-(defmacro def-map->bean-via-builder [map->bean map->builder bean-class-sym]
-  (let [map-sym         'value-map
-        map->build-call (list '.build
-                              (list map->builder map-sym))]
+(defmacro def-map->bean-via-builder [map->bean map->builder bean-class-sym build-method-sym]
+  (let [map-sym 'value-map]
     `(def ~(with-meta map->bean {:tag bean-class-sym})
        (fn ~map->bean [~map-sym]
-         ~map->build-call))))
+         ~(list build-method-sym
+                (list map->builder map-sym))))))
 
 (defprotocol TranslatableToMap
   (bean->map [this]
@@ -210,7 +209,9 @@
         (def-map->setter-bean ~map->bean ~bean-class-sym ~field-specs)])))
 
 (defmacro def-builder-translation [bean-class-sym builder-class-sym field-specs & [{:keys [builder-form
-                                                                                           exclude-fields]}]]
+                                                                                           get-only-fields
+                                                                                           set-only-fields
+                                                                                           build-method]}]]
   (let [map->builder (with-meta (symbol (str "map->" builder-class-sym))
                                 {:tag builder-class-sym})
         map->bean    (symbol (str "map->" bean-class-sym))
@@ -219,13 +220,17 @@
         builder-form (or builder-form
                          (list (symbol (str builder-class-sym "."))))]
     `(do
-       (extend-mappable ~bean-class-sym ~field-specs)
+       (extend-mappable ~bean-class-sym
+                        ~(filter-specs field-specs set-only-fields))
        [(def-bean->map ~bean->map)
         (def-map->bean-builder ~map->builder
                                ~bean-class-sym
                                ~builder-form
-                               ~(filter-specs field-specs exclude-fields))
+                               ~(filter-specs field-specs get-only-fields))
         (def-map->bean-via-builder ~map->bean
                                    ~map->builder
-                                   ~bean-class-sym)])))
+                                   ~bean-class-sym
+                                   ~(if build-method
+                                      (symbol (str "." build-method))
+                                      '.build))])))
 
