@@ -231,6 +231,6 @@
                                    ~map->builder
                                    ~bean-class-sym
                                    ~(if build-method
-                                      (symbol (str "." build-method))
+                                      (symbol (str "." (name build-method)))
                                       '.build))])))
 
