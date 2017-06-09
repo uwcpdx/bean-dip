@@ -4,3 +4,8 @@ deployment:
     commands:
       - lein deploy clojars
 
+  hotfix-01:
+    branch: hotfix-01
+    commands:
+      - lein deploy clojars
+
