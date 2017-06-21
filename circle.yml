@@ -1,6 +1,7 @@
 deployment:
-  snapshot:
+  clojars:
     branch: master
     commands:
+      - lein test
       - lein deploy clojars
 
