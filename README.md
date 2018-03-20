@@ -138,8 +138,8 @@ Note that `bean-dip.core/->bean-val` must be implemented for recursive translati
 Often bean data models have contracts expressed via Javadoc documentation, such as valid ranges for the values of specific fields. It's useful to codify these contracts between your Clojure code and the wrapped Java API by writing [specs](https://clojure.org/about/spec), which enable you to validate, generate and reason about the data being exchanged. Only the `name` of keys are used to find bean field names, so they can be namespaced keywords with specs attached:
 
 ```
-(require '[clojure.spec :as s])
-(require '[clojure.spec.test :as stest])
+(require '[clojure.spec.alpha :as s])
+(require '[clojure.spec.test.alpha :as stest])
 
 (s/def ::foo-field #(= % 42))
 (s/def ::test-map (s/keys :req [::foo-field]))
