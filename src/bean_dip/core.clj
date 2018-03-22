@@ -142,21 +142,27 @@
     :default
     v))
 
-(defn make-maybe-assoc! [transient-sym bean-sym spec]
+(defmacro when-let>
+  [arg binding & rest]
+  `(if-let ~binding
+     (-> ~arg ~@rest)
+     ~arg))
+
+(defn make-maybe-assoc! [bean-sym spec]
   (let [[field-key map-key] spec]
-    `(when-let [value-sym# (~(name->getter-sym field-key map-key) ~bean-sym)]
-       (assoc! ~transient-sym ~map-key (resolve-map-value ~map-key value-sym#)))))
+    `(when-let> [value-sym# (~(name->getter-sym field-key map-key) ~bean-sym)]
+       (assoc! ~map-key (resolve-map-value ~map-key value-sym#)))))
 
 (defn make-map [bean-sym field-specs]
-  (let [transient-sym 'transient]
-    (-> (into `([~transient-sym (transient {})] let)
-              (map (partial make-maybe-assoc! transient-sym bean-sym))
-              field-specs)
-        (conj `(persistent! ~transient-sym)))))
+  (-> (into `((transient {}) ->)
+            (map (partial make-maybe-assoc! bean-sym))
+            field-specs)
+      (conj `persistent!)
+      reverse))
 
 (defmacro make-bean->map [bean-class field-specs]
   (let [bean         (with-meta 'bean {:tag bean-class})
-        make-map-seq (reverse (make-map bean field-specs))]
+        make-map-seq (make-map bean field-specs)]
     `(fn [~bean]
        ~make-map-seq)))
 

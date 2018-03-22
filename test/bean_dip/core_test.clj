@@ -1,7 +1,7 @@
 (ns bean-dip.core-test
   (:require [clojure.test :as test]
             [bean-dip.core :as main])
-  (:import [bean_dip BasicBean ParentBean BuiltBean BuiltBean$Builder]))
+  (:import [bean_dip BasicBean ParentBean BuiltBean BuiltBean$Builder BigBean]))
 
 (set! *warn-on-reflection* true)
 
@@ -54,8 +54,35 @@
    :some-condition? true
    :read-only-field "READ ONLY"})
 
-(def test-bean (BuiltBean. 42 "hello" true))
+(def built-bean (BuiltBean. 42 "hello" true))
 
-(test/deftest built-bean
-  (test/is (= test-bean (.build (map->BuiltBean$Builder test-map)))))
+(test/deftest built-bean-test
+  (test/is (= built-bean (.build (map->BuiltBean$Builder test-map)))))
+
+(def big-bean
+  (BigBean. "a" "a" "a" "a" "a" "a" "a" "a" "a"))
+
+(def big-bean-map
+  {:field1 "a"
+   :field2 "a"
+   :field3 "a"
+   :field4 "a"
+   :field5 "a"
+   :field6 "a"
+   :field7 "a"
+   :field8 "a"
+   :field9 "a"})
+
+(main/def-translation BigBean #{:field1
+                                :field2
+                                :field3
+                                :field4
+                                :field5
+                                :field6
+                                :field7
+                                :field8
+                                :field9})
+
+(test/deftest big-bean-test
+  (test/is (= (BigBean->map big-bean) big-bean-map)))
 
