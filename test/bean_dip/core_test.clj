@@ -60,18 +60,24 @@
   (test/is (= built-bean (.build (map->BuiltBean$Builder test-map)))))
 
 (def big-bean
-  (BigBean. "a" "a" "a" "a" "a" "a" "a" "a" "a"))
+  (BigBean. "a" "a" "a" "a" "a" "a" "a" "a" "a" "a" "a" "a" "a" "a" "a"))
 
 (def big-bean-map
-  {:field1 "a"
-   :field2 "a"
-   :field3 "a"
-   :field4 "a"
-   :field5 "a"
-   :field6 "a"
-   :field7 "a"
-   :field8 "a"
-   :field9 "a"})
+  {:field1  "a"
+   :field2  "a"
+   :field3  "a"
+   :field4  "a"
+   :field5  "a"
+   :field6  "a"
+   :field7  "a"
+   :field8  "a"
+   :field9  "a"
+   :field10 "a"
+   :field11 "a"
+   :field12 "a"
+   :field13 "a"
+   :field14 "a"
+   :field15 "a"})
 
 (main/def-translation BigBean #{:field1
                                 :field2
@@ -81,7 +87,13 @@
                                 :field6
                                 :field7
                                 :field8
-                                :field9})
+                                :field9
+                                :field10
+                                :field11
+                                :field12
+                                :field13
+                                :field14
+                                :field15})
 
 (test/deftest big-bean-test
   (test/is (= (BigBean->map big-bean) big-bean-map)))
