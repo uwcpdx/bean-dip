@@ -38,6 +38,8 @@ Give the keys to translate to and from Java bean fields, get two defns:
 => {:foo-field 42}
 ```
 
+For more continue reading, see [the tests](test/bean_dip/core_test.clj), or [check out some real-world usage](https://github.com/uwcpdx/stepwise/blob/master/src/stepwise/model.clj).
+
 ## Motivation / Pitch
 
 To wrap a Java API involving numerous bean classes and instances, potentially deeply nested, translation to and from Clojure maps needs to be traceable, efficient and easy to maintain. Reflection can make translation automatic, resulting in less code to maintain, but it undermines traceability. Reflection can also become the bottleneck in your application when it's not cached and bean volumes are high enough. An explicit mapping allows you to trace a map key's bean provenance and also resolve bean accessor dispatch at compile time.
