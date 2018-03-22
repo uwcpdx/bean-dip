@@ -1,12 +1,12 @@
 package bean_dip;
 
-public class TestBean {
+public class BuiltBean {
     private Long fooField;
     private String barField;
     private Boolean someCondition;
     private final String readOnlyField = "READ ONLY";
 
-    public TestBean(Long fooField, String barField, Boolean someCondition) {
+    public BuiltBean(Long fooField, String barField, Boolean someCondition) {
         this.fooField = fooField;
         this.barField = barField;
         this.someCondition = someCondition;
@@ -33,15 +33,15 @@ public class TestBean {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TestBean testBean = (TestBean) o;
+        BuiltBean builtBean = (BuiltBean) o;
 
-        if (fooField != null ? !fooField.equals(testBean.fooField) : testBean.fooField != null)
+        if (fooField != null ? !fooField.equals(builtBean.fooField) : builtBean.fooField != null)
             return false;
-        if (barField != null ? !barField.equals(testBean.barField) : testBean.barField != null)
+        if (barField != null ? !barField.equals(builtBean.barField) : builtBean.barField != null)
             return false;
-        if (someCondition != null ? !someCondition.equals(testBean.someCondition) : testBean.someCondition != null)
+        if (someCondition != null ? !someCondition.equals(builtBean.someCondition) : builtBean.someCondition != null)
             return false;
-        return readOnlyField != null ? readOnlyField.equals(testBean.readOnlyField) : testBean.readOnlyField == null;
+        return readOnlyField != null ? readOnlyField.equals(builtBean.readOnlyField) : builtBean.readOnlyField == null;
 
     }
 
@@ -56,7 +56,7 @@ public class TestBean {
 
     @Override
     public String toString() {
-        return "TestBean{" +
+        return "BuiltBean{" +
             "fooField=" + fooField +
             ", barField='" + barField + '\'' +
             ", someCondition=" + someCondition +
@@ -88,8 +88,8 @@ public class TestBean {
             return this;
         }
 
-        public TestBean build() {
-            return new TestBean(fooField, barField, someCondition);
+        public BuiltBean build() {
+            return new BuiltBean(fooField, barField, someCondition);
         }
     }
 }

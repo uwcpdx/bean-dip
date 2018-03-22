@@ -3,13 +3,13 @@ package bean_dip;
 import java.util.List;
 
 public class ParentBean {
-    private List<TestBean> children;
+    private List<BuiltBean> children;
 
-    public List<TestBean> getChildren() {
+    public List<BuiltBean> getChildren() {
         return children;
     }
 
-    public void setChildren(List<TestBean> children) {
+    public void setChildren(List<BuiltBean> children) {
         this.children = children;
     }
 
