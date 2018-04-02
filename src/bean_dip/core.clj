@@ -87,9 +87,10 @@
   (into []
         (map (fn [[_ map-key :as spec]]
                (if (get-method builder-override [bean-class map-key])
-                 `(builder-override [~bean-class-sym ~map-key]
-                                    ~builder-sym
-                                    (~map-key ~map-sym))
+                 `(if (contains? ~map-sym ~map-key)
+                    (builder-override [~bean-class-sym ~map-key]
+                                      ~builder-sym
+                                      (~map-key ~map-sym)))
                  (make-set-field-call map-sym
                                       builder-sym
                                       #(str "." (-> (name %)

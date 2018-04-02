@@ -74,6 +74,20 @@ Map key names are translated to a bean field names by converting hyphens to came
 => {:foo 42}
 ```
 
+#### Key Type Hinting
+
+When a bean setter method has overloads, Clojure will resort to reflection to select the correct one. To avoid this you can supply a type hint per field where needed in the form `[field-key value-type-symbol]`:
+
+```
+(bd/def-translation MyBean #{[::field-with-overloaded-setter String]})
+```
+
+Note that you can still alias a type hinted key. The type symbol just needs to be the last element:
+
+```
+(bd/def-translation MyBean #{[:field-with-overloaded-setter :key-for-maps String]})
+```
+
 #### Field Value Translation
 
 Field values can be bidirectionally translated if their bean representation varies from their map one (e.g. serialization/deserialization). Just implement the `bean-dip.core/->bean-val` and `bean-dip.core/->map-val` multimethods for the key in question:
