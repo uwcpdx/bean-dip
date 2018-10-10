@@ -2,6 +2,11 @@ package bean_dip;
 
 public class BasicBean {
     private Long fooField;
+    private boolean truthy = false;
+
+    public boolean isTruthy() {
+        return truthy;
+    }
 
     public Long getFooField() {
         return fooField;

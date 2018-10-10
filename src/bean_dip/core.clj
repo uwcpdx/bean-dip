@@ -146,9 +146,10 @@
 (defn make-maybe-assoc! [bean-sym spec]
   (let [[field-key map-key] spec]
     `((fn [tmap#]
-        (if-let [value-sym# (~(name->getter-sym field-key map-key) ~bean-sym)]
-          (assoc! tmap# ~map-key (resolve-map-value ~map-key value-sym#))
-          tmap#)))))
+        (let [value-sym# (~(name->getter-sym field-key map-key) ~bean-sym)]
+          (if-not (nil? value-sym#)
+            (assoc! tmap# ~map-key (resolve-map-value ~map-key value-sym#))
+            tmap#))))))
 
 (defn make-map [bean-sym field-specs]
   (-> (into `((transient {}) ->)

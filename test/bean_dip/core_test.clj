@@ -12,12 +12,14 @@
   (Long/parseLong value))
 
 (main/def-translation ParentBean #{:children})
-(main/def-translation BasicBean #{[:foo-field :foo]})
+(main/def-translation BasicBean #{[:foo-field :foo]
+                                  :truthy?})
 
 (defmethod main/->bean-val :children [_ value]
   (mapv map->BasicBean value))
 
-(def basic-map {:foo "42"})
+(def basic-map {:foo     "42"
+                :truthy? false})
 (def basic-bean (doto (BasicBean.)
                   (.setFooField 42)))
 

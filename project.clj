@@ -1,4 +1,4 @@
-(defproject uwcpdx/bean-dip "0.7.6-SNAPSHOT"
+(defproject uwcpdx/bean-dip "0.7.6"
   :description "Bidirectional translation between maps and Java beans that's declarative and reflection-free"
   :url "https://github.com/uwcpdx/bean-dip"
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.9.0"]
