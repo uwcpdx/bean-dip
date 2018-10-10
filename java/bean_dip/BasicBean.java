@@ -8,6 +8,10 @@ public class BasicBean {
         return truthy;
     }
 
+    public void setTruthy(boolean truthy) {
+        this.truthy = truthy;
+    }
+
     public Long getFooField() {
         return fooField;
     }
