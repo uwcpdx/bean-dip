@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/uwcpdx/bean-dip/tree/master.svg?style=svg)](https://circleci.com/gh/uwcpdx/bean-dip/tree/master)
 
-Bidirectional translation between Clojure maps and Java beans that's declarative and reflection-free.
+Bidirectional translation between Clojure maps and Java beans that's declarative and reflection-free
 
 ## Basic Usage
 
@@ -267,7 +267,7 @@ _If someone can show me how to enable `*warn-on-reflection*` within the closure 
 
 ## How it Works
 
-Bean-dip simply generates the type annotated invocations of getters/setters you'd write in a manual translation layer, with a dash of naming conventions and extension hooks sprinkled on top. Here's a logical expansion of a `def-translation` form for illustration:
+Bean-dip simply generates the type annotated invocations of getters/setters you'd write in a manual translation layer, with a dash of naming conventions and extension hooks. Here's a logical expansion of a `def-translation` form for illustration:
 
 ```
 (magic-macroexpand '(def-translation BasicBean #{:foo-field}))
